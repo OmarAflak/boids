@@ -1,30 +1,11 @@
-import numpy as np
 import pyglet
-
-from boids.boid import Boid
 from boids.point import Point
-from boids.obstacle import Obstacle
+from boids.world import World
 
 
 window = pyglet.window.Window(600, 600, caption="Boids")
 batch = pyglet.graphics.Batch()
-
-boids = [
-    Boid(
-        Point.random(range(window.width), range(window.height)),
-        Point.random(range(-5, 5, 2), range(-5, 5, 2))
-    )
-    for _ in range(100)
-]
-
-obstacles = [
-    Obstacle(Point(i, j), 20)
-    for i in range(0, window.width + 1, 150)
-    for j in range(0, window.height + 1, 150)
-]
-
-perception_radius = 50
-perception_angle = np.pi / 3
+world = World(window.width, window.height, 100)
 
 
 def create_triangles(
@@ -47,43 +28,17 @@ def create_points(
     ]
 
 
-def update_boids(value):
-    # update based on snapshot of current state
-    copies = [boid.copy() for boid in boids]
-
-    for boid in boids:
-        neighbors = []
-        for b in copies:
-            if b == boid:
-                continue
-
-            if b.position.distance_to(boid.position) > perception_radius:
-                continue
-
-            neighbors.append(b)
-
-        visible_obstacles = []
-        for obstacle in obstacles:
-            if obstacle.position.distance_to(boid.position) > 2 * perception_radius:
-                continue
-
-            target = obstacle.position - boid.position
-            if abs(boid.velocity.angle_to(target)) > perception_angle / 2:
-                continue
-
-            visible_obstacles.append(obstacle)
-
-        boid.update(neighbors, visible_obstacles)
-        boid.position.bound(0, window.width, 0, window.height)
+def update(value):
+    world.update()
 
 
 @window.event
 def on_draw():
-    _1 = create_triangles([boid.vertices() for boid in boids], batch)
-    _2 = create_points([obstacle.position for obstacle in obstacles], batch)
+    _1 = create_triangles([boid.vertices() for boid in world.boids], batch)
+    _2 = create_points([obstacle.position for obstacle in world.obstacles], batch)
     window.clear()
     batch.draw()
 
 
-pyglet.clock.schedule_interval(update_boids, 0.01)
+pyglet.clock.schedule_interval(update, 0.01)
 pyglet.app.run()
