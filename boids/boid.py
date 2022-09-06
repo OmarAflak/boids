@@ -1,28 +1,29 @@
 import math
-from dataclasses import dataclass
-from boids.point import Point
+from dataclasses import dataclass, field
+from geometry.point import Point
+from quadtree.locatable import Locatable
 from boids.obstacle import Obstacle
 
 
 @dataclass
-class Boid:
+class Boid(Locatable):
     MAX_VELOCITY = 6
     MAX_STEERING = 0.2
     REACTION_SPEED = 5
     SEPARATION_THRESHOLD = 30
 
-    position: Point = Point()
-    velocity: Point = Point()
-    acceleration: Point = Point()
+    position: Point = field(default_factory=Point)
+    velocity: Point = field(default_factory=Point)
+    acceleration: Point = field(default_factory=Point)
 
-    def update(self, neighbors: 'list[Boid]', obstacles: 'list[Obstacle]'):
+    def update(self, neighbors: list['Boid'], obstacles: list[Obstacle]):
         new_acceleration = Point()
         new_acceleration += self._get_update_from_neighbors(neighbors)
         new_acceleration += self._get_update_from_obstacles(obstacles)
         self.acceleration = new_acceleration
         self._update()
 
-    def vertices(self) -> 'tuple[Point, Point, Point]':
+    def vertices(self) -> tuple[Point, Point, Point]:
         direction = self.velocity.unit()
         normal = Point(-direction.y, direction.x)
         return (
@@ -38,7 +39,7 @@ class Boid:
             self.acceleration.copy()
         )
 
-    def _get_update_from_neighbors(self, neighbors: 'list[Boid]') -> Point:
+    def _get_update_from_neighbors(self, neighbors: list['Boid']) -> Point:
         if not neighbors:
             return Point()
 
@@ -77,7 +78,7 @@ class Boid:
 
         return new_acceleration
 
-    def _get_update_from_obstacles(self, obstacles: 'list[Obstacle]') -> Point:
+    def _get_update_from_obstacles(self, obstacles: list[Obstacle]) -> Point:
         repulsion = Point()
         for obstacle in obstacles:
             force = obstacle.position - self.position
@@ -93,3 +94,9 @@ class Boid:
         self.position += self.velocity
         self.velocity += self.acceleration
         self.velocity.limit_length(Boid.MAX_VELOCITY)
+
+    def get_x(self) -> float:
+        return self.position.x
+
+    def get_y(self) -> float:
+        return self.position.y

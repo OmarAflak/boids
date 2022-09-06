@@ -1,0 +1,3 @@
+pyglet==1.5.26
+git+https://github.com/omaraflak/quadtree
+git+https://github.com/omaraflak/geometry

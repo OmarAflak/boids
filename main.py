@@ -1,11 +1,6 @@
 import pyglet
-from boids.point import Point
+from geometry.point import Point
 from boids.world import World
-
-
-window = pyglet.window.Window(600, 600, caption="Boids")
-batch = pyglet.graphics.Batch()
-world = World(window.width, window.height, 100)
 
 
 def create_triangles(
@@ -28,17 +23,28 @@ def create_points(
     ]
 
 
-def update(value):
-    world.update()
+window = pyglet.window.Window(600, 600, caption="Boids")
+batch = pyglet.graphics.Batch()
+world = World(window.width, window.height, number_of_boids=100)
+boids = world.boids.all()
+obstacles = world.obstacles.all()
+boid_shapes = create_triangles([boid.vertices() for boid in boids], batch)
+obstacle_shapes = create_points([obstacle.position for obstacle in obstacles], batch)
 
 
 @window.event
 def on_draw():
-    _1 = create_triangles([boid.vertices() for boid in world.boids], batch)
-    _2 = create_points([obstacle.position for obstacle in world.obstacles], batch)
+    boid_vertices = [boid.vertices() for boid in boids]
+    for shape, p in zip(boid_shapes, boid_vertices):
+        shape.position = p[0].x, p[0].y, p[1].x, p[1].y, p[2].x, p[2].y
+
+    obstacle_vertices = [obstacle.position for obstacle in obstacles]
+    for shape, p in zip(obstacle_shapes, obstacle_vertices):
+        shape.position = p.x, p.y
+
     window.clear()
     batch.draw()
 
 
-pyglet.clock.schedule_interval(update, 0.01)
+pyglet.clock.schedule_interval(lambda _: world.update(), 0.001)
 pyglet.app.run()
